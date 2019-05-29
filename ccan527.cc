@@ -152,6 +152,7 @@ bool CCAN527::Processing(void)
   {
    cCAN527ProtectedPart_Ptr.Get()->BussOffControl(n);
    cCAN527ProtectedPart_Ptr.Get()->TransmittProcessing(n);
+   cCAN527ProtectedPart_Ptr.Get()->Processing(n);
   }
  }
  return(true); 

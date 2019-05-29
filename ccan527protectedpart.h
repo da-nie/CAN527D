@@ -64,6 +64,7 @@ class CCAN527ProtectedPart
   void ClearReceiverBuffer(uint32_t channel);//очистить буфер приёма
   void ClearTransmitterBuffer(uint32_t channel);//очистить буфер передачи
   bool BussOffControl(uint32_t channel);//проверить работоспособность контроллера канала и сбросить канал при необходимости
+  void Processing(uint32_t channel);//цикл обработки  
  //-закрытые функции-----------------------------------------------------------------------------------
  private:
 };

@@ -128,23 +128,6 @@ bool CCAN527Channel::ApplyMessage(void)
 //----------------------------------------------------------------------------------------------------
 void CCAN527Channel::TransmittInterrupt(void)
 {
- //узнаем, с чем связано прерывание
- uint8_t ir=sCANMemoryMap_Ptr->InterruptRegister;
- if (ir==1)//прерывание по смене состояния (регистр статуса ОБЯЗАТЕЛЬНО НУЖНО прочитать)
- {
-  uint8_t sr=sCANMemoryMap_Ptr->StatusRegister;
-  ir=0;
- }
- if (ir!=0)//прерывание в слоте
- {
-  if (ir==2) ir=15;
-        else ir-=2;          
- }
- if (ir>=1 && ir<=15)
- {
-  //требуется сбросить CONTROL0_RG_INTPND
-  sCANMessageControl_Ptr[ir-1]->Control0=(RG_UNC<<CONTROL0_RG_MSGVAL)|(RG_UNC<<CONTROL0_RG_TXIE)|(RG_UNC<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
- }
  TransmittProcessing();
 }
 //----------------------------------------------------------------------------------------------------
@@ -193,6 +176,25 @@ void CCAN527Channel::ReceiveInterrupt(void)
   sCANMessageControl_Ptr[n]->Control1=(RG_UNC<<CONTROL1_RG_RMTPND)|(RG_RES<<CONTROL1_RG_TXRQST)|(RG_RES<<CONTROL1_RG_MSGLST)|(RG_RES<<CONTROL1_RG_NEWDAT);
   cRingBuffer_Receiver_Ptr.Get()->Push(cCAN527CANPackage);
  }
+ 
+ //узнаем, с чем связано прерывание
+ uint8_t ir=sCANMemoryMap_Ptr->InterruptRegister;
+ if (ir==1)//прерывание по смене состояния (регистр статуса ОБЯЗАТЕЛЬНО НУЖНО прочитать)
+ {
+  uint8_t sr=sCANMemoryMap_Ptr->StatusRegister;
+  ir=0;
+ }
+ if (ir!=0)//прерывание в слоте
+ {
+  if (ir==2) ir=15;
+        else ir-=2;          
+ }
+ if (ir>=1 && ir<=15)
+ {
+  //требуется сбросить CONTROL0_RG_INTPND
+  sCANMessageControl_Ptr[ir-1]->Control0=(RG_UNC<<CONTROL0_RG_MSGVAL)|(RG_UNC<<CONTROL0_RG_TXIE)|(RG_UNC<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
+ }
+ 
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -378,7 +380,6 @@ void CCAN527Channel::OnInterrupt(void)
 void CCAN527Channel::TransmittProcessing(void)
 {
  if (IsWaitable()==true) return;//мы отрабатываем Buss Off, передача запрещена
- 
  for(uint32_t n=0;n<MESSAGE_AMOUNT;n++)
  {
   if (cCAN527CANMessage[n].IsReceiveMode()==true) continue;//этот слот для приёма
@@ -434,4 +435,12 @@ bool CCAN527Channel::BussOffControl(void)
   return(false);
  }
  return(true);
+}
+//----------------------------------------------------------------------------------------------------
+//цикл обработки
+//----------------------------------------------------------------------------------------------------
+void CCAN527Channel::Processing(void)
+{
+ ReceiveInterrupt();
+ TransmittInterrupt(); 
 }

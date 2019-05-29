@@ -208,5 +208,10 @@ bool CCAN527ProtectedPart::BussOffControl(uint32_t channel)
 {
  return(cCAN527Channel_Ptr[channel].Get()->BussOffControl());
 }
-
-
+//----------------------------------------------------------------------------------------------------
+//цикл обработки
+//----------------------------------------------------------------------------------------------------
+void CCAN527ProtectedPart::Processing(uint32_t channel)
+{
+ cCAN527Channel_Ptr[channel].Get()->Processing();
+}
