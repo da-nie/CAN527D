@@ -73,7 +73,9 @@ void CCAN527Channel::SetWaitState(void)
 bool CCAN527Channel::Reset(void)
 {
  //делаем сброс канала
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->ControlRegister=(1<<CONTROL_RG_CCE)|(0<<CONTROL_RG_EIE)|(0<<CONTROL_RG_SIE)|(1<<CONTROL_RG_IE)|(1<<CONTROL_RG_INIT);
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->ControlRegister=(1<<CONTROL_RG_CCE)|(0<<CONTROL_RG_EIE)|(0<<CONTROL_RG_SIE)|(1<<CONTROL_RG_IE)|(0<<CONTROL_RG_INIT);
  return(true);
 }
@@ -138,9 +140,12 @@ bool CCAN527Channel::StartTransmittPackage(const CCAN527CANPackage &cCAN527CANPa
  uint32_t message_index=cCAN527CANPackage.MessageIndex;
  if (cCAN527CANMessage[message_index].IsReceiveMode()==true) return(false);//этот слот для приёма данных 
  //настраиваем слово управления, чтобы остановить возможную передачу
+ asm volatile ("": : :"memory");
  sCANMessageControl_Ptr[message_index]->Control0=(RG_RES<<CONTROL0_RG_MSGVAL)|(RG_RES<<CONTROL0_RG_TXIE)|(RG_RES<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
+ asm volatile ("": : :"memory");
  sCANMessageControl_Ptr[message_index]->Control1=(RG_SET<<CONTROL1_RG_RMTPND)|(RG_RES<<CONTROL1_RG_TXRQST)|(RG_RES<<CONTROL1_RG_MSGLST)|(RG_RES<<CONTROL1_RG_NEWDAT);
  //записываем нужные данные в поля контроллера 
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->StatusRegister=(0<<STATUS_RG_BOFF)|(0<<STATUS_RG_WARN)|(0<<STATUS_RG_WAKE)|(0<<STATUS_RG_RXOK)|(0<<STATUS_RG_TXOK)|(0<<STATUS_RG_LEC2)|(0<<STATUS_RG_LEC1)|(0<<STATUS_RG_LEC0);
  cCAN527CANMessage[message_index].Arbitration=cCAN527CANPackage.Arbitration;
  sCANMessage_Ptr[message_index]->Arbitration=cCAN527CANPackage.Arbitration;
@@ -149,7 +154,9 @@ bool CCAN527Channel::StartTransmittPackage(const CCAN527CANPackage &cCAN527CANPa
  sCANMessage_Ptr[message_index]->MessageConfiguration=(cCAN527CANPackage.Length<<4)|(1<<3)|(extendedmode<<2);
  memcpy(const_cast<uint8_t *>(sCANMessage_Ptr[message_index]->Data),cCAN527CANPackage.Data,cCAN527CANPackage.Length);//копируем данные
  //настраиваем слово управления для передачи
+ asm volatile ("": : :"memory");
  sCANMessageControl_Ptr[message_index]->Control1=(RG_RES<<CONTROL1_RG_RMTPND)|(RG_SET<<CONTROL1_RG_TXRQST)|(RG_RES<<CONTROL1_RG_MSGLST)|(RG_SET<<CONTROL1_RG_NEWDAT);
+ asm volatile ("": : :"memory");
  sCANMessageControl_Ptr[message_index]->Control0=(RG_SET<<CONTROL0_RG_MSGVAL)|(RG_SET<<CONTROL0_RG_TXIE)|(RG_RES<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
  
  TransmittIsDone[message_index]=false; 
@@ -172,7 +179,9 @@ void CCAN527Channel::ReceiveInterrupt(void)
   CCAN527CANPackage cCAN527CANPackage(arbitration,length,ChannelIndex,n);
   memcpy(cCAN527CANPackage.Data,const_cast<uint8_t*>(sCANMessage_Ptr[n]->Data),8);
   //очищаем сообщение
+  asm volatile ("": : :"memory");
   sCANMessageControl_Ptr[n]->Control0=(RG_SET<<CONTROL0_RG_MSGVAL)|(RG_UNC<<CONTROL0_RG_TXIE)|(RG_UNC<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
+  asm volatile ("": : :"memory");
   sCANMessageControl_Ptr[n]->Control1=(RG_UNC<<CONTROL1_RG_RMTPND)|(RG_RES<<CONTROL1_RG_TXRQST)|(RG_RES<<CONTROL1_RG_MSGLST)|(RG_RES<<CONTROL1_RG_NEWDAT);
   cRingBuffer_Receiver_Ptr.Get()->Push(cCAN527CANPackage);
  }
@@ -192,9 +201,9 @@ void CCAN527Channel::ReceiveInterrupt(void)
  if (ir>=1 && ir<=15)
  {
   //требуется сбросить CONTROL0_RG_INTPND
+  asm volatile ("": : :"memory");
   sCANMessageControl_Ptr[ir-1]->Control0=(RG_UNC<<CONTROL0_RG_MSGVAL)|(RG_UNC<<CONTROL0_RG_TXIE)|(RG_UNC<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
  }
- 
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -342,16 +351,21 @@ bool CCAN527Channel::ApplyChannelSettings(void)
  if (btr0==0) return(false);
  //настраиваем канал
  if (Reset()==false) return(false);
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->ControlRegister=(1<<CONTROL_RG_CCE)|(0<<CONTROL_RG_EIE)|(0<<CONTROL_RG_SIE)|(0<<CONTROL_RG_IE)|(0<<CONTROL_RG_INIT);
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->StatusRegister=(0<<STATUS_RG_BOFF)|(0<<STATUS_RG_WARN)|(0<<STATUS_RG_WAKE)|(0<<STATUS_RG_RXOK)|(0<<STATUS_RG_TXOK)|(0<<STATUS_RG_LEC2)|(0<<STATUS_RG_LEC1)|(0<<STATUS_RG_LEC0);
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->CPUInterfaceRegister=(0<<CPU_IFC_RG_RSTST)|(0<<CPU_IFC_RG_DSC)|(0<<CPU_IFC_RG_DMC)|(0<<CPU_IFC_RG_PWD)|(0<<CPU_IFC_RG_SLEEP)|(0<<CPU_IFC_RG_MUX)|(1<<CPU_IFC_RG_CEN);
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->BitTimingRegister0=btr0;
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->BitTimingRegister1=BIN8(0,0,1,0,0,0,1,1);
  //настраиваем маски сообщений
  ApplyMessageMask();
  //настраиваем слоты сообщений
  ApplyMessage();
- 
+ asm volatile ("": : :"memory");
  sCANMemoryMap_Ptr->ControlRegister=(0<<CONTROL_RG_CCE)|(0<<CONTROL_RG_EIE)|(0<<CONTROL_RG_SIE)|(1<<CONTROL_RG_IE)|(0<<CONTROL_RG_INIT);
  return(true);
 }
@@ -409,6 +423,7 @@ void CCAN527Channel::ClearTransmitterBuffer(void)
 //----------------------------------------------------------------------------------------------------
 bool CCAN527Channel::BussOffControl(void)
 {
+ asm volatile ("": : :"memory");
  uint8_t st_rg=sCANMemoryMap_Ptr->StatusRegister;
  if ((st_rg&(1<<STATUS_RG_BOFF))!=0)//BussOff
  {
@@ -426,7 +441,9 @@ bool CCAN527Channel::BussOffControl(void)
   for(uint32_t n=0;n<MESSAGE_AMOUNT;n++)
   {
    //очищаем ошибки сообщения
+   asm volatile ("": : :"memory");
    sCANMessageControl_Ptr[n]->Control0=(RG_SET<<CONTROL0_RG_MSGVAL)|(RG_RES<<CONTROL0_RG_TXIE)|(RG_RES<<CONTROL0_RG_RXIE)|(RG_RES<<CONTROL0_RG_INTPND);
+   asm volatile ("": : :"memory");
    sCANMessageControl_Ptr[n]->Control1=(RG_RES<<CONTROL1_RG_RMTPND)|(RG_RES<<CONTROL1_RG_TXRQST)|(RG_RES<<CONTROL1_RG_MSGLST)|(RG_RES<<CONTROL1_RG_NEWDAT);
   }  
   //переинициализируем канал

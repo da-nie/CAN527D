@@ -112,7 +112,11 @@ bool CMemoryControl::Write(uint64_t offset,uint64_t size,volatile uint8_t *data)
  if (IsAddr(offset)==false) return(false);	
  if (IsAddr(offset+size-1+offset)==false) return(false);
  volatile uint8_t* ptr=reinterpret_cast<volatile uint8_t*>(VirtualAddr);
- for(uint64_t n=0;n<size;n++,ptr++,data++) *ptr=*data;
+ for(uint64_t n=0;n<size;n++,ptr++,data++)
+ {
+  asm volatile ("": : :"memory");
+  *ptr=*data;
+ }
  return(true);	
 }
 //----------------------------------------------------------------------------------------------------
@@ -123,6 +127,10 @@ bool CMemoryControl::Read(uint64_t offset,uint64_t size,volatile uint8_t *data)
  if (IsAddr(offset)==false) return(false);	
  if (IsAddr(offset+size-1+offset)==false) return(false);	
  volatile uint8_t* ptr=reinterpret_cast<volatile uint8_t*>(VirtualAddr);
- for(uint64_t n=0;n<size;n++,ptr++,data++) *data=*ptr;
+ for(uint64_t n=0;n<size;n++,ptr++,data++) 
+ {
+  asm volatile ("": : :"memory");  
+  *data=*ptr;
+ }
  return(true);
 }
